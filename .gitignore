@@ -1,0 +1,13 @@
+*.bak
+*.blg
+*.aux
+*.log
+*.dvi
+.RData
+.Rhistory
+*.gz
+spgs/spgs-ex.R
+spgs.Rcheck
+spgs/src-i386
+spgs/src-x64
+*.fna
