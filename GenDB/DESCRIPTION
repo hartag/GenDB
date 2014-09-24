@@ -6,7 +6,7 @@ Version: 0.10
 Date: 2014-09-14
 Author: Andrew Hart
 Maintainer: Andrew Hart <ahart@dim.uchile.cl>
-Depends:  R (>= 3.0), seqinr, spgs
+Depends:  R (>= 3.0), seqinr
 Description: to do
 License: GPL (>= 2)
 NeedsCompilation: no

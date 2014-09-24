@@ -51,7 +51,7 @@ read.gbk <- function(file, entries=FALSE, regions=c("gene", "CDS", "misc_feature
     stop("gbk file contains no ORIGIN.")
   seq <- unlist(strsplit(chunk[(seqStart[1]+1):(seqEnd[1]-1)], ""))
   seq <- seq[seq %in% letters]
-  seq.rc <- reverseComplement(seq, content="dna")
+  seq.rc <- rev(comp(seq))
   } #if
 
 #Get extents of regions
