@@ -13,9 +13,6 @@ BuildSequenceDB <- function(dataDir, fasta.ext="*.fna", range=c(1,Inf), reg.exp=
     stop("the specified range has resulted in no genomes, so no database has been generated")
   files <- files[first:last]
  
-#Get total bases in genomes
-	totalBases <- 0
-	
 #Initialise database
   nEntries <- last-first+1
   db <- data.frame(
@@ -57,7 +54,7 @@ BuildSequenceDB <- function(dataDir, fasta.ext="*.fna", range=c(1,Inf), reg.exp=
     db$Accession[i] <- genomeInfo$Accession
     db$Version[i] <- genomeInfo$Version
 	  db$Length[i] <- length(genome)
-	  db$UnknownBases[i] <- db$Length[i]-sum(genome %in% c("a", "c", "g", "t"))
+	  db$AmbiguousBases[i] <- db$Length[i]-sum(genome %in% c("a", "c", "g", "t"))
     db$IsGenome[i] <- genomeInfo$IsGenome
     db$IsSequence[i] <- genomeInfo$IsSequence
     db$IsChromosome[i] <- genomeInfo$IsChromosome
