@@ -65,32 +65,46 @@ print.summary.GenomeDB <- function(x, ...)
   invisible(x)
 } #function
 
-GetIndexFromName <- function(db, name, first.only=FALSE, ...)
+GetIndexFromName <- function(db, name, exact=FALSE, first.only=FALSE, ...)
 {
 	if (missing(db)) stop("Database not specified.")
-	if (missing(name) || length(name)!=1 | !is.character(name) || nchar(name)==0)
-		stop("An invalid name has been specified.")
-idx <- which(grepl(name, db$Name, ignore.case=TRUE, ...))
-if (length(idx)==0) warning(paste("No sequences found that match", name))
-if (first.only) idx[1]
-else idx
+	if (!("GenomeDB" %in% class(db))) stop("the specified database is not valid")
+	if (!is.character(name))
+		stop("an invalid value for name has been given.")
+	idx <- sapply(name, function(n) {
+	  ind <- grep(n, db$Name, fixed=exact, ignore.case=!exact, ...)
+	  if (length(ind)==0)
+	  {
+	  	ind <- as.character(NA)
+	  	names(ind) <- n
+	  }
+	  else
+	  	names(ind) <- db$Name[ind]
+	  ind
+	}, simplify=FALSE, USE.NAMES=FALSE)
+	if (first.only) idx <- lapply(idx, "[", 1)
+	unlist(idx)
 } #function
 
 GetIndexFromAccession <- function(db, accession, exact=FALSE, first.only=FALSE, ...)
 {
 	if (missing(db)) stop("Database not specified.")
-	if (missing(accession) || length(accession)!=1 | !is.character(accession))
-		stop("An invalid accession number has been specified.")
-	if (!exact)
-	{
-		m <- regexec("(.*)\\..*", accession)
-		if (m[[1]][1]!=-1) 
-			accession <- regmatches(accession, m)[[1]][2]
-	} #if
-idx <- which(grepl(accession, db$Accession, ignore.case=TRUE, ...))
-if (length(idx)==0) warning(paste("No sequences found that match", accession))
-if (first.only) idx[1]
-else idx
+	if (!("GenomeDB" %in% class(db))) stop("the specified database is not valid")
+	if (!is.character(accession))
+		stop("an invalid value for accession has been given.")
+	idx <- sapply(accession, function(acc) {
+	  ind <- grep(acc, db$Accession, fixed=exact, ignore.case=!exact, ...)
+	  if (length(ind)==0)
+	  {
+	  	ind <- as.character(NA)
+	  	names(ind) <- acc
+	  }
+	  else
+	  	names(ind) <- db$Accession[ind]
+	  ind
+	}, simplify=FALSE, USE.NAMES=FALSE)
+	if (first.only) idx <- lapply(idx, "[", 1)
+	unlist(idx)
 } #function
 
 subset.GenomeDB <- function(x, subset, select, drop=FALSE, ...)
@@ -150,10 +164,26 @@ LoadData <- function(x, key, ...)
 	  return(read.gbk(x$File[idx], ...))
   if (class(x)[1]=="SeqDB")
   {
-	  data <- read.gbk(x$File[idx], ...)
+	  data <- read.fasta(x$File[idx], ...)
 	  if (length(data)==1) return(data[[1]])
 	  else return(data)
 	} #if
 	stop("invalid database type")
+} #function
+
+Location <- function(db)
+{
+	if (missing(db)) stop("no database has been specified")
+	if (!("GenomeDB" %in% class(db))) stop("the specified database is not valid")
+  attr(db, "DataDir")
+} #function
+
+`Location<-` <- function(db, value)
+{
+	if (missing(db)) stop("no database has been specified")
+	if (!("GenomeDB" %in% class(db))) stop("the specified database is not valid")
+	if (missing(value)) stop("a new location has not been specified")
+  attr(db, "DataDir") <- value
+  db #return database with new location
 } #function
 
