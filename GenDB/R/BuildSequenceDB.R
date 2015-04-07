@@ -1,14 +1,14 @@
 #BuildSequenceDB.R
 
-BuildSequenceDB <- function(dataDir, fasta.ext="*.fna", range=c(1,Inf), reg.exp=FALSE, ...)
+BuildSequenceDB <- function(dataDir, ext="*.fna", range=c(1,Inf), reg.exp=FALSE, ...)
 {
 #Check arguments
 	if (length(range)==1) range <- c(1, range)
 
 #Search for genome files
 	cat("Searching for FASTA files ...\n")
-	if (reg.exp) fasta.ext <- glob2rx(fasta.ext)
-	files <- dir(dataDir, fasta.ext, recursive=TRUE, full.names=TRUE)
+	if (reg.exp) fasta.ext <- glob2rx(ext)
+	files <- dir(dataDir, ext, recursive=TRUE, full.names=TRUE)
 	if (length(files)==0) stop("No files found")
 	first <- max(1, range[1])
 	last <- min(c(length(files), range[2]))
@@ -50,7 +50,14 @@ BuildSequenceDB <- function(dataDir, fasta.ext="*.fna", range=c(1,Inf), reg.exp=
     else
       cat(paste("Processing genome", i, "of", nEntries, "...\n"))
     file <- files[i]
-    genome <- read.fasta(file)
+    genome <- NULL
+    res <- try(genome <- read.fasta(file))
+    if (class(res)=="try-erorr")
+    {
+      print(res)
+      stop("try error bail out")
+    } #if
+    if (is.null(genome)) next
     if (is.list(genome) && length(genome)>0) genome <- genome[[1]]
     if(is.null(attr(genome, "Annot"))) next #invalid genome load, skip it
     info <- ParseFastaHeader(attr(genome, "Annot")) #extract FASTA header info and parse it

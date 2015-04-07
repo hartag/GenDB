@@ -18,7 +18,8 @@ LoadData.GenBankDB <- function(x, key, ...)
 	} #if
 	if (length(idx)==0 || idx<1 || idx>nrow(x))
 		stop("No sequence has been found or an invalid sequence index has been specified.")
-	read.gbk(x$File[idx], ...)
+	InputFile <- file.path(attr(x, "DataDir"), x$File[idx])
+	read.gbk(inputFile, ...)
 } #function
 
 
@@ -34,7 +35,8 @@ LoadData.SeqDB <- function(x, key, ...)
 	} #if
 	if (length(idx)==0 || idx<1 || idx>nrow(x))
 		stop("No sequence has been found or an invalid sequence index has been specified.")
-	data <- read.gbk(x$File[idx], ...)
+	InputFile <- file.path(attr(x, "DataDir"), x$File[idx])
+	data <- read.fasta(inputFile, ...)
 	if (length(data)==1) data[[1]]
 	else data
 } #function

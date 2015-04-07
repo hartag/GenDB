@@ -92,8 +92,9 @@ GetIndexFromAccession <- function(db, accession, exact=FALSE, first.only=FALSE, 
 	if (!("GenomeDB" %in% class(db))) stop("the specified database is not valid")
 	if (!is.character(accession))
 		stop("an invalid value for accession has been given.")
+		accessionField <- if (class(db)[1]=="GenBankDB") "Version" else "Accession"
 	idx <- sapply(accession, function(acc) {
-	  ind <- grep(acc, db$Accession, fixed=exact, ignore.case=!exact, ...)
+	  ind <- grep(acc, db[[accessionField]], fixed=exact, ignore.case=!exact, ...)
 	  if (length(ind)==0)
 	  {
 	  	ind <- as.character(NA)
@@ -160,11 +161,12 @@ LoadData <- function(x, key, ...)
 	} #if
 	if (length(idx)==0 || idx<1 || idx>nrow(x))
 		stop("No sequence has been found or an invalid sequence index has been specified.")
+	inputFile <- file.path(attr(x, "DataDir"), x$File[idx])
   if (class(x)[1]=="GenBankDB")
-	  return(read.gbk(x$File[idx], ...))
+	  return(read.gbk(inputFile, ...))
   if (class(x)[1]=="SeqDB")
   {
-	  data <- read.fasta(x$File[idx], ...)
+	  data <- read.fasta(inputFile, ...)
 	  if (length(data)==1) return(data[[1]])
 	  else return(data)
 	} #if
@@ -184,6 +186,6 @@ Location <- function(db)
 	if (!("GenomeDB" %in% class(db))) stop("the specified database is not valid")
 	if (missing(value)) stop("a new location has not been specified")
   attr(db, "DataDir") <- value
-  db #return database with new location
+  invisible(db) #return database with new location
 } #function
 
