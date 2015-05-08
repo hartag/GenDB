@@ -22,7 +22,7 @@ read.gbk <- function(file, entries=FALSE, regions=c("gene", "CDS", "misc_feature
   } #if
   info <- list(Definition=definition)
   info <- ParseGenBankDefinition(definition, info)
-  header <- regexec("LOCUS\\s+(.+)\\s+(\\d+)\\s+bp\\s+(.+)\\s+(.+) (...) (.+)$", chunk[1])
+  header <- regexec("LOCUS\\s+([^ \t]+)\\s+(\\d+)\\s+bp\\s+([^ \t]+)\\s+([^ \t]+)\\s+(...)\\s+(.+)$", chunk[1])
   m <- regmatches(chunk[1], header)[[1]]
   info$Accession <- m[[2]]
   info$Length <- as.integer(m[[3]])
