@@ -1,3 +1,5 @@
+#BuildGenBankDB
+
 BuildGenBankDB <- function(dataDir, ext="*.gbk", range=c(1,Inf), reg.exp=FALSE, ...)
 {
 #Check arguments
@@ -6,7 +8,7 @@ BuildGenBankDB <- function(dataDir, ext="*.gbk", range=c(1,Inf), reg.exp=FALSE, 
 #Search for GenBank files
 	cat("Searching for GenBank files ...\n")
 	if (reg.exp) ext <- glob2rx(ext)
-	files <- dir(dataDir, ext, recursive=TRUE, full.names=TRUE)
+	files <- dir(dataDir, ext, recursive=TRUE, full.names=FALSE)
 	if (length(files)==0) stop("No files found")
 	first <- max(1, range[1])
 	last <- min(c(length(files), range[2]))
@@ -51,8 +53,18 @@ BuildGenBankDB <- function(dataDir, ext="*.gbk", range=c(1,Inf), reg.exp=FALSE, 
       cat(paste("Processing genome", i, "of", nEntries, "...", elapsedTime, "s elapsed\n"))
     else
       cat(paste("Processing genome", i, "of", nEntries, "...\n"))
-    file <- files[i]
-    info <- read.gbk(file, entries=FALSE, sequence=FALSE)
+    file <- file.path(dataDir, files[i])
+    info <- try(read.gbk(file, entries=FALSE, sequence=FALSE))
+    if (class(info)=="try-erorr")
+    {
+      print(info)
+      stop("try error bail out")
+    } #if
+    if (is.null(info) || class(info)!="gbk.info")
+    {
+      cat("Invalid gbk.info:", file, "\n")
+      next #invalid gbk info loaded, skip it
+    } #if
     db$Name[i] <- info$Name
     db$Description[i] <- info$Description
     db$Organism[i] <- info$Organism
@@ -78,7 +90,7 @@ BuildGenBankDB <- function(dataDir, ext="*.gbk", range=c(1,Inf), reg.exp=FALSE, 
 	attr(db, "DataDir") <- dataDir
 	attr(db, "StartCreationDate") <- createTime
 	attr(db, "EndCreationDate") <- Sys.time()
-	class(db) <- c("SeqDB", "GenomeDB", "data.frame")
+	class(db) <- c("GenBankDB", "GenomeDB", "data.frame")
 
 #	db <- structure(db, 	DataDir=dataDir, StartCreationDate=createTime, 
 #	  EndCreationDate=Sys.time(), class=c("GenBankDB", "GenomeDB", "data.frame"))
