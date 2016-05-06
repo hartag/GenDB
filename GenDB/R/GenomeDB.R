@@ -1,37 +1,5 @@
 #GenomeDB.R
 
-ParseGenBankDefinition <- function(definition, info=list())
-{
-	if (missing(definition) || !is.character(definition))
-		stop("definition must be of type character")
-	if (!is.list(info)) stop("info must be a list")
-	tokens <- regmatches(definition, regexec("^\\s*(.*),\\s*(.*)$", definition))[[1]]
-	if (length(tokens)==0) tokens <- regmatches(definition, regexec("^\\s*(.*)\\s*$", definition))[[1]]
-	tokens <- tokens[-1]
-	info$Name <- tokens[1]
-	if (length(tokens)>=2)
-	{
-		info$Description <- tokens[2]
-		info$IsGenome <- grepl("genome", info$Description, ignore.case=TRUE)
-		info$IsSequence <- grepl("sequence", info$Description, ignore.case=TRUE)
-		info$IsChromosome <- grepl("chromosome", info$Name, ignore.case=TRUE)
-		info$IsPlasmid <- grepl("plasmid", info$Name, ignore.case=TRUE)
-		info$IsComplete <- grepl("complete", info$Description, ignore.case=TRUE)
-	} else {
-		info$Description <- ""
-		info$IsGenome <- FALSE
-		info$IsSequence <- FALSE
-		info$IsChromosome <- FALSE
-		info$IsPlasmid <- FALSE
-		info$IsComplete <- FALSE
-	} #if
-	info$IsDraft <- grepl("draft", info$Definition, ignore.case=TRUE)
-	r <- regexec("^\\s*(\\S+\\s\\S+)\\s*", definition)
-  m <- regmatches(definition, r)[[1]]
-  info$Organism <- if (length(m)<2) definition else m[2]
-	info
-} #function
-
 summary.GenomeDB <- function(db, ...)
 {
 	x <- list()

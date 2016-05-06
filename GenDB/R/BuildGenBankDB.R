@@ -1,6 +1,6 @@
-#BuildGenBankDB
+#BuildGenBankDB.R
 
-BuildGenBankDB <- function(dataDir, ext="*.gbk", range=c(1,Inf), reg.exp=FALSE, ...)
+BuildGenBankDB <- function(dataDir, ext="*.gbff.gz", range=c(1,Inf), reg.exp=FALSE, ...)
 {
 #Check arguments
 	if (length(range)==1) range <- c(1, range)
@@ -22,6 +22,16 @@ BuildGenBankDB <- function(dataDir, ext="*.gbk", range=c(1,Inf), reg.exp=FALSE, 
     Name=character(nEntries),
     Description=character(nEntries),
     Organism=character(nEntries),
+    Domain=character(nEntries),
+    Phylum=character(nEntries),
+    Class=character(nEntries),
+    Order=character(nEntries),
+    Family=character(nEntries),
+    Genus=character(nEntries),
+    Species=character(nEntries),
+    Strain=character(nEntries),
+    Substrain=character(nEntries),
+    taxid=character(nEntries),
     Accession=character(nEntries),
     Version=character(nEntries),
     GI=character(nEntries),
@@ -54,11 +64,11 @@ BuildGenBankDB <- function(dataDir, ext="*.gbk", range=c(1,Inf), reg.exp=FALSE, 
     else
       cat(paste("Processing genome", i, "of", nEntries, "...\n"))
     file <- file.path(dataDir, files[i])
-    info <- try(read.gbk(file, entries=FALSE, sequence=FALSE))
+    info <- try(readgbff(file, entries=FALSE, sequence=FALSE))
     if (class(info)=="try-erorr")
     {
       print(info)
-      stop("try error bail out")
+      stop("readgbff error")
     } #if
     if (is.null(info) || class(info)!="gbk.info")
     {
@@ -67,7 +77,17 @@ BuildGenBankDB <- function(dataDir, ext="*.gbk", range=c(1,Inf), reg.exp=FALSE, 
     } #if
     db$Name[i] <- info$Name
     db$Description[i] <- info$Description
-    db$Organism[i] <- info$Organism
+    db$Organism[i] <- info$BinomialName
+    db$Domain[i] <- info$Domain
+    db$Phylum[i] <- info$Phylum
+    db$Class[i] <- info$Class
+    db$Order[i] <- info$Order
+    db$Family[i] <- info$Family
+    db$Genus[i] <- info$Genus
+    db$Species[i] <- info$Species
+    db$Strain[i] <- info$Strain
+    db$Substrain[i] <- info$Substrain
+    db$taxid[i] <- info$taxid
     db$Accession[i] <- info$Accession
     db$Version[i] <- info$Version
     db$GI[i] <- info$GI

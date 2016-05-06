@@ -1,6 +1,6 @@
 #BuildSequenceDB
 
-BuildSequenceDB <- function(dataDir, ext="*.fna", range=c(1,Inf), reg.exp=FALSE, ...)
+BuildSequenceDB <- function(dataDir, ext="*.fna.gz", range=c(1,Inf), reg.exp=FALSE, ...)
 {
 #Check arguments
 	if (length(range)==1) range <- c(1, range)
