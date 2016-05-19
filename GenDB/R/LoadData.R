@@ -19,7 +19,8 @@ LoadData.GenBankDB <- function(x, key, ...)
 	if (length(idx)==0 || idx<1 || idx>nrow(x))
 		stop("No sequence has been found or an invalid sequence index has been specified.")
 	InputFile <- file.path(attr(x, "DataDir"), x$File[idx])
-	read.gbff(inputFile, ...)
+	records <- read.gbff(inputFile, recordNo=x$RecordNo[idx], ...)
+	records[[1]]
 } #function
 
 

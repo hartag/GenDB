@@ -130,9 +130,12 @@ LoadData <- function(x, key, ...)
 	if (length(idx)==0 || idx<1 || idx>nrow(x))
 		stop("No sequence has been found or an invalid sequence index has been specified.")
 	inputFile <- file.path(attr(x, "DataDir"), x$File[idx])
-  if (class(x)[1]=="GenBankDB")
-	  return(read.gbk(inputFile, ...))
-  if (class(x)[1]=="SeqDB")
+  if (is(x, "GenBankDB"))
+  {
+    records <- read.gbff(inputFile, recordNo=x$RecordNo[idx], ...)
+	  return(records[[1]])
+	}
+  if (is(x, "SeqDB"))
   {
 	  data <- read.fasta(inputFile, ...)
 	  if (length(data)==1) return(data[[1]])

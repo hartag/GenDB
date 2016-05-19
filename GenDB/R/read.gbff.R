@@ -1,17 +1,29 @@
 #read.gbff.R
 
-read.gbff <- function(file, entries=FALSE, regions=c("gene", "CDS", "misc_feature"), sequence=FALSE)
+read.gbff <- function(file, text=readLines(file), recordNo=NULL, entries=FALSE, 
+regions=c("gene", "CDS", "misc_feature"), sequence=FALSE)
 {
 #Check arguments
   regions <- match.arg(regions)
-  
-#Load GenBank file
-  if (entries)
-    chunk <- readLines(file, warn=FALSE) #read file
-  else
-    chunk <- readLines(file, n=200, warn=FALSE) #read file
-  lineCount <- length(chunk)
+  recordIdx <- cumsum(substr(text, 1, 5)=="LOCUS")
+  numRecords <- recordIdx[length(recordIdx)]
+  if (is.null(recordNo) || length(recordNo)==0)
+    recordNo <- 1L:numRecords
+  else {
+    if (!is.numeric(recordNo) || any(floor(recordNo)!=recordNo))
+      stop("recordNo must only contain whole numbers")
+    if (any(recordNo<1 || recordNo>numRecords))
+    stop("recordNo contains indices that are out of range for the GebBank data")
+    recordNo <- as.integer(recordNo)
+  }
+  records <- split(text, recordIdx)[recordNo]
+  gbi <- lapply(records, parseGBFFRecord, entries=entries, regions=regions, sequence=sequence)
+  names(gbi) <- sapply(gbi, "[[", "Accession")
+  gbi
+} #function
 
+parseGBFFRecord <- function(chunk, entries=FALSE, regions=c("gene", "CDS", "misc_feature"), sequence=FALSE)
+{
 #Get genome information
 ##Get and parse Definition line
   header <- regexec("DEFINITION\\s+(.+)$", chunk[2])

@@ -17,94 +17,102 @@ BuildGenBankDB <- function(dataDir, ext="*.gbff.gz", range=c(1,Inf), reg.exp=FAL
   files <- files[first:last]
  
 #Initialise database
-  nEntries <- last-first+1
-  db <- data.frame(
-    Name=character(nEntries),
-    Description=character(nEntries),
-    Organism=character(nEntries),
-    Domain=character(nEntries),
-    Phylum=character(nEntries),
-    Class=character(nEntries),
-    Order=character(nEntries),
-    Family=character(nEntries),
-    Genus=character(nEntries),
-    Species=character(nEntries),
-    Strain=character(nEntries),
-    Substrain=character(nEntries),
-    taxid=character(nEntries),
-    Accession=character(nEntries),
-    Version=character(nEntries),
-    GI=character(nEntries),
-    Content=character(nEntries),
-    PhysicalStructure=character(nEntries),
-    GB=character(nEntries),
-    LastUpdate=character(nEntries),
-    File=files,
-    FileType="gbk",
-    Length=integer(nEntries),
-    IsGenome=logical(nEntries),
-    IsSequence=logical(nEntries),
-    IsChromosome=logical(nEntries),
-    IsPlasmid=logical(nEntries),
-    IsComplete=logical(nEntries),
-    IsDraft=logical(nEntries),
-    Registered=logical(nEntries),
-    stringsAsFactors=FALSE
-  )
-  rownames(db) <- as.character(first:last)
+  nFiles <- last-first+1
+  db <- NULL #for holding database of GenBank record info
 
 #Process genomes
   basesProcessed <- 0
   createTime <- Sys.time()
   startTime <- proc.time()
-  for (i in 1:nEntries)
+  elapsedTime <- 0
+  for (fn in 1L:nFiles)
   {
-    if (i>1)
-      cat(paste("Processing genome", i, "of", nEntries, "...", elapsedTime, "s elapsed\n"))
+    if (fn>1)
+      cat(paste("Processing genome", fn, "of", nFiles, "...", elapsedTime, "s elapsed\n"))
     else
-      cat(paste("Processing genome", i, "of", nEntries, "...\n"))
-    file <- file.path(dataDir, files[i])
-    info <- try(readgbff(file, entries=FALSE, sequence=FALSE))
+      cat(paste("Processing genome", fn, "of", nFiles, "...\n"))
+    file <- file.path(dataDir, files[fn])
+    info <- try(read.gbff(file, entries=FALSE, sequence=FALSE))
     if (class(info)=="try-erorr")
     {
       print(info)
-      stop("readgbff error")
+      stop("read.gbff error")
     } #if
-    if (is.null(info) || class(info)!="gbk.info")
+    if (is.null(info) || class(info)!="list" || any(sapply(info, class)!="gbk.info"))
     {
       cat("Invalid gbk.info:", file, "\n")
       next #invalid gbk info loaded, skip it
     } #if
-    db$Name[i] <- info$Name
-    db$Description[i] <- info$Description
-    db$Organism[i] <- info$BinomialName
-    db$Domain[i] <- info$Domain
-    db$Phylum[i] <- info$Phylum
-    db$Class[i] <- info$Class
-    db$Order[i] <- info$Order
-    db$Family[i] <- info$Family
-    db$Genus[i] <- info$Genus
-    db$Species[i] <- info$Species
-    db$Strain[i] <- info$Strain
-    db$Substrain[i] <- info$Substrain
-    db$taxid[i] <- info$taxid
-    db$Accession[i] <- info$Accession
-    db$Version[i] <- info$Version
-    db$GI[i] <- info$GI
-    db$Content[i] <- info$Content
-    db$PhysicalStructure[i] <- info$PhysicalStructure
-    db$GB[i] <- info$GB
-    db$LastUpdate[i] <- info$LastUpdate
-	  db$Length[i] <- info$Length
-    db$IsGenome[i] <- info$IsGenome
-    db$IsSequence[i] <- info$IsSequence
-    db$IsChromosome[i] <- info$IsChromosome
-    db$IsPlasmid[i] <- info$IsPlasmid
-    db$IsComplete[i] <- info$IsComplete
-    db$IsDraft[i] <- info$IsDraft
-    db$Registered[i] <- TRUE
-		elapsedTime = round((proc.time()-startTime)[3], 3)
-	} #for i
+    nRecords <- length(info)
+    if (nRecords==0) continue
+    seqInfo <- data.frame(
+      Name=character(nRecords),
+      Description="",
+      Organism="",
+      Domain="",
+      Phylum="",
+      Class="",
+      Order="",
+      Family="",
+      Genus="",
+      Species="",
+      Strain="",
+      Substrain="",
+      taxid="",
+      Accession="",
+      Version="",
+      GI="",
+      Content="",
+      PhysicalStructure="",
+      GB="",
+      LastUpdate="",
+      File=files[fn],
+      RecordNo=1L:nRecords,
+      FileType="gbk",
+      Length=0L,
+      IsGenome=FALSE,
+      IsSequence=FALSE,
+      IsChromosome=FALSE,
+      IsPlasmid=FALSE,
+      IsComplete=FALSE,
+      IsDraft=FALSE,
+      Registered=FALSE,
+      stringsAsFactors=FALSE
+    )
+    for (i in 1L:nRecords)
+    {
+      seqInfo$Name[i] <- info[[i]]$Name
+      seqInfo$Description[i] <- info[[i]]$Description
+      seqInfo$Organism[i] <- info[[i]]$BinomialName
+      seqInfo$Domain[i] <- info[[i]]$Domain
+      seqInfo$Phylum[i] <- info[[i]]$Phylum
+      seqInfo$Class[i] <- info[[i]]$Class
+      seqInfo$Order[i] <- info[[i]]$Order
+      seqInfo$Family[i] <- info[[i]]$Family
+      seqInfo$Genus[i] <- info[[i]]$Genus
+      seqInfo$Species[i] <- info[[i]]$Species
+      seqInfo$Strain[i] <- info[[i]]$Strain
+      seqInfo$Substrain[i] <- info[[i]]$Substrain
+      seqInfo$taxid[i] <- info[[i]]$taxid
+      seqInfo$Accession[i] <- info[[i]]$Accession
+      seqInfo$Version[i] <- info[[i]]$Version
+      seqInfo$GI[i] <- info[[i]]$GI
+      seqInfo$Content[i] <- info[[i]]$Content
+      seqInfo$PhysicalStructure[i] <- info[[i]]$PhysicalStructure
+      seqInfo$GB[i] <- info[[i]]$GB
+      seqInfo$LastUpdate[i] <- info[[i]]$LastUpdate
+	    seqInfo$Length[i] <- info[[i]]$Length
+      seqInfo$IsGenome[i] <- info[[i]]$IsGenome
+      seqInfo$IsSequence[i] <- info[[i]]$IsSequence
+      seqInfo$IsChromosome[i] <- info[[i]]$IsChromosome
+      seqInfo$IsPlasmid[i] <- info[[i]]$IsPlasmid
+      seqInfo$IsComplete[i] <- info[[i]]$IsComplete
+      seqInfo$IsDraft[i] <- info[[i]]$IsDraft
+      seqInfo$Registered[i] <- TRUE
+    } #for i
+    db <- rbind(db, seqInfo)
+		elapsedTime <- round((proc.time()-startTime)[3], 3)
+	} #for fn
 
 #Set class and other attributes of database
 	attr(db, "DataDir") <- dataDir
@@ -115,6 +123,6 @@ BuildGenBankDB <- function(dataDir, ext="*.gbff.gz", range=c(1,Inf), reg.exp=FAL
 #	db <- structure(db, 	DataDir=dataDir, StartCreationDate=createTime, 
 #	  EndCreationDate=Sys.time(), class=c("GenBankDB", "GenomeDB", "data.frame"))
 
-	cat("Done.\n", sum(db$Registered), " of ", nEntries, " sequences successfully registered.\n")
+	cat("Done.\n", sum(db$Registered), " in ", nFiles, " sequences successfully registered.\n")
 	invisible(db) #return database
 } #function
