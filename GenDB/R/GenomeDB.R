@@ -54,12 +54,13 @@ GetIndexFromName <- function(db, name, exact=FALSE, first.only=FALSE, ...)
 	unlist(idx)
 } #function
 
-GetIndexFromAccession <- function(db, accession, exact=FALSE, first.only=FALSE, ...)
+GetIndexFromAccession <- function(db, accession, accessionField=NULL, exact=FALSE, first.only=FALSE, ...)
 {
 	if (missing(db)) stop("Database not specified.")
 	if (!("GenomeDB" %in% class(db))) stop("the specified database is not valid")
 	if (!is.character(accession))
 		stop("an invalid value for accession has been given.")
+	if (is.null(accessionField))
 		accessionField <- if (class(db)[1]=="GenBankDB") "Version" else "Accession"
 	idx <- sapply(accession, function(acc) {
 	  ind <- grep(acc, db[[accessionField]], fixed=exact, ignore.case=!exact, ...)
