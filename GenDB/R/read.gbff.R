@@ -1,10 +1,10 @@
 #read.gbff.R
 
 read.gbff <- function(file, text=readLines(file), recordNo=NULL, entries=FALSE, 
-regions=c("gene", "CDS", "misc_feature"), sequence=FALSE)
+features=c("gene", "CDS", "misc_feature"), sequence=FALSE)
 {
 #Check arguments
-  regions <- match.arg(regions)
+  features <- match.arg(features)
   recordIdx <- cumsum(substr(text, 1, 5)=="LOCUS")
   numRecords <- recordIdx[length(recordIdx)]
   if (is.null(recordNo) || length(recordNo)==0)
@@ -17,12 +17,15 @@ regions=c("gene", "CDS", "misc_feature"), sequence=FALSE)
     recordNo <- as.integer(recordNo)
   }
   records <- split(text, recordIdx)[recordNo]
-  gbi <- lapply(records, parseGBFFRecord, entries=entries, regions=regions, sequence=sequence)
+  gbi <- lapply(records, parseGBFFRecord, entries=entries, features=features, sequence=sequence)
+  for (i in seq_along(gbi)) {
+    gbi[[i]]$File <- file
+  }
   names(gbi) <- sapply(gbi, "[[", "Accession")
   gbi
 } #function
 
-parseGBFFRecord <- function(chunk, entries=FALSE, regions=c("gene", "CDS", "misc_feature"), sequence=FALSE)
+parseGBFFRecord <- function(chunk, entries=FALSE, features=c("gene", "CDS", "misc_feature"), sequence=FALSE)
 {
 #Get genome information
 ##Get and parse Definition line
@@ -47,14 +50,13 @@ parseGBFFRecord <- function(chunk, entries=FALSE, regions=c("gene", "CDS", "misc
   info$PhysicalStructure <- m[[5]]
   info$GB <- m[[6]]
   info$LastUpdate <- m[[7]]
-  info$File <- file
   verLine <- which(grepl("^VERSION", chunk[1:8]))[1]
   if (!is.null(verLine))
   {
-    header <- regexec("VERSION\\s+(.+)\\s+(\\S+).*$", chunk[verLine])
+    header <- regexec("VERSION\\s+(\\S+)(\\s+(\\S+))?.*$", chunk[verLine])
     m <- regmatches(chunk[verLine], header)[[1]]
     info$Version <- m[[2]]
-    info$GI <- m[[3]]
+    info$GI <- m[[4]]
   } #if
 
 ##Get taxanomic classification information
@@ -111,24 +113,24 @@ parseGBFFRecord <- function(chunk, entries=FALSE, regions=c("gene", "CDS", "misc
   seqStart <- grep("^ORIGIN", chunk)
   seqEnd <- grep("^//", chunk)
   if (length(seqStart)>1 || length(seqEnd)>1)
-    warning("gbk file contains more than one ORIGIN.  Only the first one has been read.")
+    warning("gbff file contains more than one ORIGIN.  Only the first one has been read.")
   if (length(seqStart)==0 || length(seqEnd)==0)
-    stop("gbk file contains no ORIGIN.")
+    stop("gbff file contains no ORIGIN.")
   seq <- unlist(strsplit(chunk[(seqStart[1]+1):(seqEnd[1]-1)], ""))
   seq <- seq[seq %in% letters]
   seq.rc <- rev(comp(seq))
   } #if
 
-#Get extents of regions
+#Get extents of features
   if (entries)
   {
-  m <- regexec(paste0(regions, "\\s+(\\d+)\\.\\.(\\d+)"), chunk)
+  m <- regexec(paste0(features, "\\s+(\\d+)\\.\\.(\\d+)"), chunk)
   cds <- regmatches(chunk, m)
   cds[sapply(cds,length)==0] <- NULL
   start <- as.numeric(sapply(cds, function(x) x[[2]]))
   stop <- as.numeric(sapply(cds, function(x) x[[3]]))
   genes1<- data.frame(start=start, stop=stop)
-  m <- regexec(paste0(regions, "\\s+complement\\((\\d+)\\.\\.(\\d+)\\)"), chunk)
+  m <- regexec(paste0(features, "\\s+complement\\((\\d+)\\.\\.(\\d+)\\)"), chunk)
   cds <- regmatches(chunk, m)
   cds[sapply(cds,length)==0] <- NULL
   stop <- -as.integer(sapply(cds, function(x) x[[2]]))
@@ -148,7 +150,7 @@ gene.list <- data.frame(gene.list, strand=c(rep(1, dim(genes1)[1]), rep(2, dim(g
   } #if
 
 #Finish preparing return
-if (entries) info$regions<- gene.list
+if (entries) info$features <- gene.list
 if (sequence)
 {
   info$primary <- seq

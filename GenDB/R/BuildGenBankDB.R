@@ -68,7 +68,7 @@ BuildGenBankDB <- function(dataDir, ext="*.gbff.gz", range=c(1,Inf), reg.exp=FAL
       LastUpdate="",
       File=files[fn],
       RecordNo=1L:nRecords,
-      FileType="gbk",
+      FileType="gbff",
       Length=0L,
       IsGenome=FALSE,
       IsSequence=FALSE,
@@ -123,6 +123,6 @@ BuildGenBankDB <- function(dataDir, ext="*.gbff.gz", range=c(1,Inf), reg.exp=FAL
 #	db <- structure(db, 	DataDir=dataDir, StartCreationDate=createTime, 
 #	  EndCreationDate=Sys.time(), class=c("GenBankDB", "GenomeDB", "data.frame"))
 
-	cat("Done.\n", sum(db$Registered), " in ", nFiles, " sequences successfully registered.\n")
+	cat("Done.\n", sum(db$Registered), "sequences out of", nrow(db), "from", nFiles, "assemblies successfully registered.\n")
 	invisible(db) #return database
 } #function

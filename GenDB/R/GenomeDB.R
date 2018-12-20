@@ -140,7 +140,10 @@ LoadData <- function(x, key, ...)
   {
 	  data <- read.fasta(inputFile, ...)
 	  if (length(data)==1) return(data[[1]])
-	  else return(data)
+	  if ("FileOffset" %in% names(x)) return(data[[x$FileOffset[i]]])
+	  return(data)
+#	  if (length(data)==1) return(data[[1]])
+#	  else return(data)
 	} #if
 	stop("invalid database type")
 } #function
