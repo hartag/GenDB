@@ -32,7 +32,7 @@ BuildGenBankDB <- function(dataDir, ext="*.gbff.gz", range=c(1,Inf), reg.exp=FAL
     else
       cat(paste("Processing genome", fn, "of", nFiles, "...\n"))
     file <- file.path(dataDir, files[fn])
-    info <- try(read.gbff(file, entries=FALSE, sequence=FALSE))
+    info <- try(read.gbff(file, features=NULL, sequence=FALSE))
     if (class(info)=="try-erorr")
     {
       print(info)

@@ -1,14 +1,15 @@
 #read.gbff.R
 
-read.gbff <- function(file, text=readLines(file), recordNo=NULL, entries=FALSE, 
-features=c("gene", "CDS", "misc_feature"), sequence=FALSE)
+read.gbff <- function(file, text=readLines(file), recordNo=NULL, 
+features=NULL, sequence=FALSE)
 {
 #Check arguments
-  features <- match.arg(features)
+  if (!any(features %in% c("gene", "CDS", "misc_feature")))
+    warning("features is not in the set of standard feature identifiers")
   recordIdx <- cumsum(substr(text, 1, 5)=="LOCUS")
   numRecords <- recordIdx[length(recordIdx)]
   if (is.null(recordNo) || length(recordNo)==0)
-    recordNo <- 1L:numRecords
+    recordNo <- seq(numRecords)
   else {
     if (!is.numeric(recordNo) || any(floor(recordNo)!=recordNo))
       stop("recordNo must only contain whole numbers")
@@ -17,7 +18,7 @@ features=c("gene", "CDS", "misc_feature"), sequence=FALSE)
     recordNo <- as.integer(recordNo)
   }
   records <- split(text, recordIdx)[recordNo]
-  gbi <- lapply(records, parseGBFFRecord, entries=entries, features=features, sequence=sequence)
+  gbi <- lapply(records, parseGBFFRecord, features=features, sequence=sequence)
   for (i in seq_along(gbi)) {
     gbi[[i]]$File <- file
   }
@@ -25,7 +26,7 @@ features=c("gene", "CDS", "misc_feature"), sequence=FALSE)
   gbi
 } #function
 
-parseGBFFRecord <- function(chunk, entries=FALSE, features=c("gene", "CDS", "misc_feature"), sequence=FALSE)
+parseGBFFRecord <- function(chunk, features=NULL, sequence=FALSE)
 {
 #Get genome information
 ##Get and parse Definition line
@@ -122,35 +123,38 @@ parseGBFFRecord <- function(chunk, entries=FALSE, features=c("gene", "CDS", "mis
   } #if
 
 #Get extents of features
-  if (entries)
+  if (!is.null(features))
   {
-  m <- regexec(paste0(features, "\\s+(\\d+)\\.\\.(\\d+)"), chunk)
+  m <- regexec(paste0("(", paste(features, collapse="|"), ")\\s+(\\d+)\\.\\.(\\d+)"), chunk)
   cds <- regmatches(chunk, m)
   cds[sapply(cds,length)==0] <- NULL
-  start <- as.numeric(sapply(cds, function(x) x[[2]]))
-  stop <- as.numeric(sapply(cds, function(x) x[[3]]))
-  genes1<- data.frame(start=start, stop=stop)
-  m <- regexec(paste0(features, "\\s+complement\\((\\d+)\\.\\.(\\d+)\\)"), chunk)
+  type <- sapply(cds, `[[`, 2L)
+  start <- as.numeric(sapply(cds, `[[`, 3L))
+  stop <- as.numeric(sapply(cds, `[[`, 4L))
+  genes1<- data.frame(feature_type=type, start=start, stop=stop, stringsAsFactors=FALSE)
+  m <- regexec(paste0("(", paste(features, collapse="|"), ")\\s+complement\\((\\d+)\\.\\.(\\d+)\\)"), chunk)
   cds <- regmatches(chunk, m)
   cds[sapply(cds,length)==0] <- NULL
-  stop <- -as.integer(sapply(cds, function(x) x[[2]]))
-  start <- -as.integer(sapply(cds, function(x) x[[3]]))
-  genes2 <- data.frame(start=start, stop=stop)
-genes2 <- info$Length+1L+genes2
-genes2 <- genes2[order(genes2$start),]
-if (sequence)
-{
-  genes1$start.codon <- sapply(genes1$start, function(i) paste(seq[i:(i+2)], collapse=""))
-  genes1$stop.codon <- sapply(genes1$stop, function(i) paste(seq[(i-2):i], collapse=""))
-  genes2$start.codon <- sapply(genes2$start, function(i) paste(seq.rc[i:(i+2)], collapse=""))
-  genes2$stop.codon <- sapply(genes2$stop, function(i) paste(seq.rc[(i-2):i], collapse=""))
-} #if
-gene.list <- rbind(genes1, genes2)
-gene.list <- data.frame(gene.list, strand=c(rep(1, dim(genes1)[1]), rep(2, dim(genes2)[1])), rf=((gene.list$start-1) %% 3)+1)
+  type <- sapply(cds, `[[`, 2L)
+  stop <- -as.integer(sapply(cds, `[[`, 3L))
+  start <- -as.integer(sapply(cds, `[[`, 4L))
+  genes2 <- data.frame(feature_type=type, start=start, stop=stop, stringsAsFactors=FALSE)
+  genes2$start <- info$Length+1L+genes2$start
+  genes2$stop <- info$Length+1L+genes2$stop
+  genes2 <- genes2[order(genes2$start),]
+  if (sequence)
+  {
+    genes1$start.codon <- sapply(genes1$start, function(i) paste(seq[i:(i+2)], collapse=""))
+    genes1$stop.codon <- sapply(genes1$stop, function(i) paste(seq[(i-2):i], collapse=""))
+    genes2$start.codon <- sapply(genes2$start, function(i) paste(seq.rc[i:(i+2)], collapse=""))
+    genes2$stop.codon <- sapply(genes2$stop, function(i) paste(seq.rc[(i-2):i], collapse=""))
+  } #if
+  gene.list <- rbind(genes1, genes2)
+  gene.list <- data.frame(gene.list, strand=c(rep(1, dim(genes1)[1]), rep(2, dim(genes2)[1])), rf=((gene.list$start-1) %% 3)+1)
   } #if
 
 #Finish preparing return
-if (entries) info$features <- gene.list
+if (!is.null(features)) info$features <- gene.list
 if (sequence)
 {
   info$primary <- seq
